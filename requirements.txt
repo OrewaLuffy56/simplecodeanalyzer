@@ -1,0 +1,8 @@
+npm create vite@latest code-analyzer -- --template react
+cd code-analyzer
+npm install
+npm install lucide-react
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+
+npm run dev
