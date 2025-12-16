@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// 1. CLEAN IMPORTS (No duplicates)
 import {
   Activity,
   AlertTriangle,
@@ -8,14 +7,11 @@ import {
   Network,
   Cpu,
   CheckCircle,
-  Terminal,
-  Share2
+  Code2 // Icon for selector
 } from "lucide-react";
 
-// IMPORT YOUR LOGIC MODULES
-import { tokenize } from "./logic/tokenizer";
-import { parse } from "./logic/parser";
-import { calculateMetrics } from "./logic/metrics";
+// 1. IMPORT THE CENTRAL ANALYZER
+import { analyzeCode } from "./logic/analyzer";
 
 // IMPORT YOUR LOGO
 import myLogo from "./assets/logo.png"; 
@@ -24,52 +20,80 @@ import myLogo from "./assets/logo.png";
 import MatrixBackground from "./MatrixBackground"; 
 
 const App = () => {
+  // Default code example
   const [code, setCode] = useState(`function example() {
   // Matrix Hack Mode
   for(i) {
      if(true) { console.log("Wake up, Neo..."); }
   }
 }`);
+
+  // 2. STATE FOR LANGUAGE
+  const [language, setLanguage] = useState('javascript');
   const [metrics, setMetrics] = useState(null);
 
+  // 3. USEEFFECT TRIGGERS ANALYZER
   useEffect(() => {
     try {
-      const tokens = tokenize(code);
-      const ast = parse(tokens);
-      const results = calculateMetrics(ast, tokens);
+      const results = analyzeCode(code, language);
       setMetrics(results);
     } catch (e) {
-      console.log("Parsing...");
+      console.log("Parsing...", e);
     }
-  }, [code]);
+  }, [code, language]);
 
   return (
-    // Outer Container is just black now
     <div className="min-h-screen bg-black text-white p-10 font-sans relative overflow-hidden">
       
-      {/* 2. MATRIX RAIN BACKGROUND */}
+      {/* BACKGROUND */}
       <MatrixBackground />
 
-      {/* 3. CONTENT WRAPPER */}
       <div className="relative z-10 max-w-7xl mx-auto">
       
         {/* --- HEADER --- */}
-        <h1 className="text-4xl font-bold mb-8 flex items-center gap-6">
-          <img src={myLogo} alt="Logo" className="w-24 h-24 object-contain" />
-          Code Analyzer
-        </h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <h1 className="text-4xl font-bold flex items-center gap-6">
+            <img src={myLogo} alt="Logo" className="w-24 h-24 object-contain" />
+            Code Analyzer
+            </h1>
 
-        <div className="grid grid-cols-2 gap-8">
+            {/* --- LANGUAGE SELECTOR --- */}
+            <div className="bg-gray-900/80 backdrop-blur-sm p-1 rounded-lg border border-gray-700 flex items-center gap-2 shadow-lg z-50">
+                <div className="pl-3 text-gray-400">
+                    <Code2 className="w-5 h-5" />
+                </div>
+                <select 
+                    value={language} 
+                    onChange={(e) => {
+                        const lang = e.target.value;
+                        setLanguage(lang);
+                        // Optional: Auto-change code snippet when switching
+                        if (lang === 'python') {
+                            setCode("# Python Mode Active\ndef check_matrix():\n    print('Follow the white rabbit')");
+                        } else {
+                            setCode("function example() {\n   // JS Mode Active\n   console.log('Wake up Neo');\n}");
+                        }
+                    }}
+                    className="bg-transparent text-white p-2 outline-none font-mono text-sm cursor-pointer hover:text-blue-400 transition-colors"
+                >
+                    <option value="javascript" className="bg-gray-900">JavaScript</option>
+                    <option value="python" className="bg-gray-900">Python (Beta)</option>
+                </select>
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
-          {/* --- EDITOR SECTION --- */}
+          {/* --- EDITOR --- */}
           <textarea
-            className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 p-6 rounded-xl h-[600px] font-mono text-sm leading-relaxed focus:outline-none focus:border-blue-500 transition-colors text-blue-100 shadow-2xl resize-none"
+            className="bg-gray-900/80 backdrop-blur-sm border border-gray-800 p-6 rounded-xl h-[600px] font-mono text-sm leading-relaxed focus:outline-none focus:border-blue-500 transition-colors text-blue-100 shadow-2xl resize-none w-full"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             spellCheck="false"
+            placeholder="// Paste your code here..."
           />
 
-          {/* --- DASHBOARD SECTION --- */}
+          {/* --- DASHBOARD --- */}
           <div className="space-y-6">
             <div className="bg-gray-900/80 backdrop-blur-sm p-8 rounded-xl border border-gray-800 h-[600px] overflow-y-auto shadow-2xl custom-scrollbar">
               
@@ -78,7 +102,7 @@ const App = () => {
                 Analysis Results
               </h2>
 
-              {/* 4-GRID METRICS LAYOUT */}
+              {/* METRICS GRID */}
               <div className="grid grid-cols-2 gap-4 mb-8">
                 
                 {/* 1. Time Complexity */}
@@ -91,7 +115,7 @@ const App = () => {
                     {metrics?.bigO || '-'}
                   </div>
                   <div className="text-[10px] text-gray-500 mt-2 leading-tight group-hover:text-gray-300 transition-colors">
-                    How execution time increases as input grows. Lower is better.
+                    Algorithm efficiency rating.
                   </div>
                 </div>
 
@@ -105,7 +129,7 @@ const App = () => {
                     {metrics?.cyclomatic || '-'}
                   </div>
                   <div className="text-[10px] text-gray-500 mt-2 leading-tight group-hover:text-gray-300 transition-colors">
-                    Number of independent paths through code. Keep below 10.
+                    Logic paths count.
                   </div>
                 </div>
 
@@ -119,7 +143,7 @@ const App = () => {
                     {metrics?.halstead?.difficulty || 0}
                   </div>
                   <div className="text-[10px] text-gray-500 mt-2 leading-tight group-hover:text-gray-300 transition-colors">
-                    How hard the code is to write/read. Based on unique operators.
+                    Readability score.
                   </div>
                 </div>
 
@@ -133,12 +157,12 @@ const App = () => {
                     {metrics?.halstead?.effort || 0}
                   </div>
                   <div className="text-[10px] text-gray-500 mt-2 leading-tight group-hover:text-gray-300 transition-colors">
-                    Mental effort required to develop or maintain this code.
+                    Maintenance effort.
                   </div>
                 </div>
               </div>
 
-              {/* Issues List */}
+              {/* ISSUES LIST */}
               <div>
                 <h3 className="font-bold mb-4 text-gray-300 flex items-center gap-2 text-sm uppercase tracking-wide">
                   <AlertTriangle className="w-4 h-4 text-yellow-500" /> Detected Issues
@@ -168,7 +192,6 @@ const App = () => {
               </div>
             </div>
           </div>
-          {/* --- END DASHBOARD SECTION --- */}
 
         </div>
       </div> 
